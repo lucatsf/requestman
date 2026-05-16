@@ -158,13 +158,17 @@ fn main() -> Result<(), slint::PlatformError> {
                         let ui = ui_handle_async.unwrap();
                         match result {
                             Ok(res) => {
-                                ui.set_response_body(res.body.into());
+                                ui.set_response_body(res.body.clone().into());
+                                let lines: Vec<slint::SharedString> = res.body.lines().map(|s| s.into()).collect();
+                                ui.set_response_lines(slint::ModelRc::from(std::rc::Rc::new(slint::VecModel::from(lines))));
                                 ui.set_response_status(format!("{} Status", res.status).into());
                                 ui.set_response_time(format!("{} ms", res.time_ms).into());
                                 ui.set_response_size(format!("{} B", res.size_bytes).into());
                             }
                             Err(e) => {
-                                ui.set_response_body(e.into());
+                                ui.set_response_body(e.clone().into());
+                                let error_lines = vec![e.into()];
+                                ui.set_response_lines(slint::ModelRc::from(std::rc::Rc::new(slint::VecModel::from(error_lines))));
                                 ui.set_response_status("Erro".into());
                             }
                         }
@@ -231,6 +235,14 @@ fn main() -> Result<(), slint::PlatformError> {
                 ui.set_header2_key(h.key.clone().into());
                 ui.set_header2_val(h.value.clone().into());
             }
+        }
+    });
+
+    let ui_copy = ui.as_weak();
+    ui.on_copy_response(move || {
+        let ui = ui_copy.unwrap();
+        if let Ok(mut ctx) = arboard::Clipboard::new() {
+            let _ = ctx.set_text(ui.get_response_body().to_string());
         }
     });
 

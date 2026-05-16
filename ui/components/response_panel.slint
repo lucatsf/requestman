@@ -1,12 +1,15 @@
-import { TextEdit, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { TextEdit, VerticalBox, HorizontalBox, ListView } from "std-widgets.slint";
 import { CustomTab } from "shared.slint";
 
 export component ResponsePanel inherits VerticalBox {
     in-out property <string> active-tab: "Body";
     in-out property <string> response-body: "Aguardando requisição...";
+    in property <[string]> response-lines;
     in property <string> status: "200 OK";
     in property <string> time: "0 ms";
     in property <string> size: "0 B";
+    
+    callback copy-clicked();
     
     spacing: 0px;
     padding: 10px;
@@ -25,9 +28,23 @@ export component ResponsePanel inherits VerticalBox {
         HorizontalBox {
             alignment: end;
             spacing: 15px;
-            Text { text: root.status; color: #2e8b57; vertical-alignment: center; }
-            Text { text: root.time; color: #2e8b57; vertical-alignment: center; }
-            Text { text: root.size; color: #2e8b57; vertical-alignment: center; }
+            
+            // Botão de copiar adicionado
+            Rectangle {
+                width: 60px;
+                height: 25px;
+                background: touch-copy.has-hover ? #f26b3a : #444;
+                border-radius: 4px;
+                Text { text: "Copiar"; color: white; horizontal-alignment: center; vertical-alignment: center; font-size: 12px; font-weight: 700; }
+                touch-copy := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.copy-clicked() }
+                }
+            }
+            
+            Text { text: root.status; color: #2e8b57; vertical-alignment: center; font-weight: 700; }
+            Text { text: root.time; color: #2e8b57; vertical-alignment: center; font-weight: 700; }
+            Text { text: root.size; color: #2e8b57; vertical-alignment: center; font-weight: 700; }
         }
     }
     
@@ -40,9 +57,25 @@ export component ResponsePanel inherits VerticalBox {
 
     VerticalBox {
         visible: active-tab == "Body";
-        TextEdit {
-            text <=> root.response-body;
-            read-only: true;
+        Rectangle {
+            background: #1e1e1e; // Fundo escuro de editor de código
+            border-radius: 5px;
+            VerticalLayout {
+                padding: 15px;
+                ListView {
+                    for line in root.response-lines: HorizontalLayout {
+                        padding-top: 1px;
+                        padding-bottom: 1px;
+                        Text {
+                            text: line;
+                            color: #9cdcfe; // Azul claro típico de chaves JSON em temas dark
+                            font-family: "Courier New";
+                            font-size: 14px;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+            }
         }
     }
     
