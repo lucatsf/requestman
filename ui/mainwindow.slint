@@ -1,0 +1,38 @@
+import { Button, ComboBox, LineEdit, TextEdit, VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+export component MainWindow inherits Window {
+    title: "Requestman";
+    width: 800px;
+    height: 600px;
+
+    VerticalBox {
+        spacing: 10px;
+        padding: 10px;
+
+        HorizontalBox {
+            spacing: 10px;
+
+            ComboBox {
+                model: ["GET", "POST", "PUT", "DELETE", "PATCH"];
+                current-value: "GET";
+                width: 120px;
+            }
+
+            LineEdit {
+                placeholder-text: "Digite a URL da API (ex: https://api.exemplo.com)";
+                horizontal-stretch: 1;
+            }
+
+            Button {
+                text: "Send";
+                primary: true;
+            }
+        }
+
+        TextEdit {
+            text: "A resposta da requisição aparecerá aqui...";
+            read-only: true;
+            vertical-stretch: 1;
+        }
+    }
+}
