@@ -62,7 +62,13 @@ pub async fn make_request(
         .map_err(|e| format!("Erro ao ler a resposta: {}", e))?;
     
     let size_bytes = body_bytes.len();
-    let body = String::from_utf8_lossy(&body_bytes).to_string();
+    let body_str = String::from_utf8_lossy(&body_bytes).to_string();
+    
+    // Tenta formatar como JSON, senão mantém a string original
+    let body = match serde_json::from_str::<serde_json::Value>(&body_str) {
+        Ok(json) => serde_json::to_string_pretty(&json).unwrap_or(body_str),
+        Err(_) => body_str,
+    };
         
     let time_ms = start_time.elapsed().as_millis();
 
@@ -98,10 +104,32 @@ fn main() -> Result<(), slint::PlatformError> {
     ui.on_send_request(move || {
         let ui = ui_handle_send.unwrap();
         
-        let url = ui.get_url().to_string();
+        let mut url = ui.get_url().to_string();
         let method = ui.get_method().to_string();
         let body = ui.get_request_body().to_string();
         
+        // Processa os Query Parameters
+        let p1_k = ui.get_param1_key().to_string();
+        let p1_v = ui.get_param1_val().to_string();
+        let p2_k = ui.get_param2_key().to_string();
+        let p2_v = ui.get_param2_val().to_string();
+
+        let mut query_params = Vec::new();
+        if !p1_k.is_empty() { query_params.push(format!("{}={}", p1_k, p1_v)); }
+        if !p2_k.is_empty() { query_params.push(format!("{}={}", p2_k, p2_v)); }
+
+        if !query_params.is_empty() {
+            let query_str = query_params.join("&");
+            if url.contains('?') {
+                url.push_str("&");
+            } else {
+                url.push_str("?");
+            }
+            url.push_str(&query_str);
+            // Atualiza a UI para o usuário ver a URL construída
+            ui.set_url(url.clone().into());
+        }
+
         let h1_k = ui.get_header1_key().to_string();
         let h1_v = ui.get_header1_val().to_string();
         let h2_k = ui.get_header2_key().to_string();

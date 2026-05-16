@@ -1,0 +1,18 @@
+{
+  "requests": [
+    {
+      "name": "https://jsonplaceholder.typicode.com/posts",
+      "url": "https://jsonplaceholder.typicode.com/posts",
+      "method": "GET",
+      "headers": [],
+      "body": ""
+    },
+    {
+      "name": "https://jsonplaceholder.typicode.com/posts/1",
+      "url": "https://jsonplaceholder.typicode.com/posts/1",
+      "method": "GET",
+      "headers": [],
+      "body": ""
+    }
+  ]
+}

@@ -17,6 +17,11 @@ export component MainWindow inherits Window {
     in-out property <string> header2-key <=> request-panel.header2-key;
     in-out property <string> header2-val <=> request-panel.header2-val;
 
+    in-out property <string> param1-key <=> request-panel.param1-key;
+    in-out property <string> param1-val <=> request-panel.param1-val;
+    in-out property <string> param2-key <=> request-panel.param2-key;
+    in-out property <string> param2-val <=> request-panel.param2-val;
+
     in-out property <string> response-body <=> response-panel.response-body;
     in-out property <string> response-status <=> response-panel.status;
     in-out property <string> response-time <=> response-panel.time;
@@ -27,6 +32,8 @@ export component MainWindow inherits Window {
     callback send-request();
     callback save-request(string);
     callback load-request(int);
+
+    property <length> request-height: 250px;
 
     HorizontalBox {
         spacing: 0px;
@@ -49,13 +56,20 @@ export component MainWindow inherits Window {
             }
 
             request-panel := RequestPanel {
-                vertical-stretch: 1;
+                height: root.request-height;
             }
 
             Rectangle {
-                height: 2px;
-                background: #888888;
-                opacity: 0.3;
+                height: 4px;
+                background: touch.has-hover || touch.pressed ? #f26b3a : #888888;
+                opacity: touch.has-hover || touch.pressed ? 1.0 : 0.3;
+
+                touch := TouchArea {
+                    mouse-cursor: row-resize;
+                    moved => {
+                        root.request-height = max(100px, root.request-height + self.mouse-y);
+                    }
+                }
             }
 
             response-panel := ResponsePanel {

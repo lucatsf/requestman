@@ -8,6 +8,10 @@ export component RequestPanel inherits VerticalBox {
     in-out property <string> header1-val: "";
     in-out property <string> header2-key: "";
     in-out property <string> header2-val: "";
+    in-out property <string> param1-key: "";
+    in-out property <string> param1-val: "";
+    in-out property <string> param2-key: "";
+    in-out property <string> param2-val: "";
     
     spacing: 0px;
     padding: 10px;
@@ -29,10 +33,14 @@ export component RequestPanel inherits VerticalBox {
     Rectangle { height: 10px; }
 
     if active-tab == "Params" : VerticalBox {
+        spacing: 5px;
         HorizontalBox {
-            LineEdit { placeholder-text: "Key"; }
-            LineEdit { placeholder-text: "Value"; }
-            LineEdit { placeholder-text: "Description"; }
+            LineEdit { placeholder-text: "Key (ex: id)"; text <=> root.param1-key; }
+            LineEdit { placeholder-text: "Value (ex: 10)"; text <=> root.param1-val; }
+        }
+        HorizontalBox {
+            LineEdit { placeholder-text: "Key (ex: status)"; text <=> root.param2-key; }
+            LineEdit { placeholder-text: "Value (ex: active)"; text <=> root.param2-val; }
         }
     }
     
