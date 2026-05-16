@@ -7,24 +7,41 @@ export component MainWindow inherits Window {
     title: "Requestman";
     width: 900px;
     height: 700px;
-    background: #ffffff;
+
+    in-out property <string> url <=> url-bar.url;
+    in-out property <string> method <=> url-bar.current-method;
+    in-out property <string> request-body <=> request-panel.body-text;
+    in-out property <string> header1-key <=> request-panel.header1-key;
+    in-out property <string> header1-val <=> request-panel.header1-val;
+    in-out property <string> header2-key <=> request-panel.header2-key;
+    in-out property <string> header2-val <=> request-panel.header2-val;
+
+    in-out property <string> response-body <=> response-panel.response-body;
+    in-out property <string> response-status <=> response-panel.status;
+    in-out property <string> response-time <=> response-panel.time;
+    in-out property <string> response-size <=> response-panel.size;
+
+    callback send-request();
 
     VerticalBox {
         spacing: 0px;
         padding: 0px;
 
-        UrlBar {}
+        url-bar := UrlBar {
+            on-send => { root.send-request() }
+        }
 
-        RequestPanel {
+        request-panel := RequestPanel {
             vertical-stretch: 1;
         }
 
         Rectangle {
             height: 2px;
-            background: #e0e0e0;
+            background: #888888;
+            opacity: 0.3;
         }
 
-        ResponsePanel {
+        response-panel := ResponsePanel {
             vertical-stretch: 1;
         }
     }

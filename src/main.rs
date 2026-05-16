@@ -7,6 +7,7 @@ pub struct RequestResult {
     pub status: u16,
     pub time_ms: u128,
     pub body: String,
+    pub size_bytes: usize,
 }
 
 pub async fn make_request(
@@ -49,10 +50,13 @@ pub async fn make_request(
         .map_err(|e| format!("Erro na requisição: {}", e))?;
 
     let status = response.status().as_u16();
-    let body = response
-        .text()
+    let body_bytes = response
+        .bytes()
         .await
         .map_err(|e| format!("Erro ao ler a resposta: {}", e))?;
+    
+    let size_bytes = body_bytes.len();
+    let body = String::from_utf8_lossy(&body_bytes).to_string();
         
     let time_ms = start_time.elapsed().as_millis();
 
@@ -60,11 +64,61 @@ pub async fn make_request(
         status,
         time_ms,
         body,
+        size_bytes,
     })
 }
 
-fn main() -> Result<(), slint::PlatformError> {
+#[tokio::main]
+async fn main() -> Result<(), slint::PlatformError> {
     let ui = MainWindow::new()?;
-    println!("Requestman - Iniciando interface (Apenas visual, sem lógica ainda)!");
+    
+    let ui_handle = ui.as_weak();
+
+    ui.on_send_request(move || {
+        let ui = ui_handle.unwrap();
+        
+        let url = ui.get_url().to_string();
+        let method = ui.get_method().to_string();
+        let body = ui.get_request_body().to_string();
+        
+        let h1_k = ui.get_header1_key().to_string();
+        let h1_v = ui.get_header1_val().to_string();
+        let h2_k = ui.get_header2_key().to_string();
+        let h2_v = ui.get_header2_val().to_string();
+
+        let mut headers = Vec::new();
+        if !h1_k.is_empty() { headers.push((h1_k, h1_v)); }
+        if !h2_k.is_empty() { headers.push((h2_k, h2_v)); }
+
+        // Set loading state
+        ui.set_response_body("Enviando requisição...".into());
+        ui.set_response_status("Carregando".into());
+        ui.set_response_time("0 ms".into());
+        ui.set_response_size("0 B".into());
+
+        let ui_handle_async = ui.as_weak();
+
+        tokio::spawn(async move {
+            let result = make_request(&method, &url, headers, &body).await;
+
+            let _ = slint::invoke_from_event_loop(move || {
+                let ui = ui_handle_async.unwrap();
+                match result {
+                    Ok(res) => {
+                        ui.set_response_body(res.body.into());
+                        ui.set_response_status(format!("{} Status", res.status).into());
+                        ui.set_response_time(format!("{} ms", res.time_ms).into());
+                        ui.set_response_size(format!("{} B", res.size_bytes).into());
+                    }
+                    Err(e) => {
+                        ui.set_response_body(e.into());
+                        ui.set_response_status("Erro".into());
+                    }
+                }
+            });
+        });
+    });
+
+    println!("Requestman - Iniciando interface conectada!");
     ui.run()
 }

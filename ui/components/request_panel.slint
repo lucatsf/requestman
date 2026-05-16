@@ -4,6 +4,10 @@ import { CustomTab } from "shared.slint";
 export component RequestPanel inherits VerticalBox {
     in-out property <string> active-tab: "Params";
     in-out property <string> body-text: "";
+    in-out property <string> header1-key: "";
+    in-out property <string> header1-val: "";
+    in-out property <string> header2-key: "";
+    in-out property <string> header2-val: "";
     
     spacing: 0px;
     padding: 10px;
@@ -19,8 +23,10 @@ export component RequestPanel inherits VerticalBox {
     
     Rectangle {
         height: 1px;
-        background: #e0e0e0;
+        background: #888888;
+        opacity: 0.3;
     }
+    Rectangle { height: 10px; }
 
     if active-tab == "Params" : VerticalBox {
         HorizontalBox {
@@ -30,14 +36,21 @@ export component RequestPanel inherits VerticalBox {
         }
     }
     
-    if active-tab == "Headers" : VerticalBox {
+    VerticalBox {
+        visible: active-tab == "Headers";
+        spacing: 5px;
         HorizontalBox {
-            LineEdit { placeholder-text: "Key (ex: Content-Type)"; }
-            LineEdit { placeholder-text: "Value (ex: application/json)"; }
+            LineEdit { placeholder-text: "Key (ex: Content-Type)"; text <=> root.header1-key; }
+            LineEdit { placeholder-text: "Value (ex: application/json)"; text <=> root.header1-val; }
+        }
+        HorizontalBox {
+            LineEdit { placeholder-text: "Key (ex: Authorization)"; text <=> root.header2-key; }
+            LineEdit { placeholder-text: "Value (ex: Bearer token)"; text <=> root.header2-val; }
         }
     }
     
-    if active-tab == "Body" : VerticalBox {
+    VerticalBox {
+        visible: active-tab == "Body";
         TextEdit {
             text <=> root.body-text;
         }

@@ -5,8 +5,8 @@ export component ResponsePanel inherits VerticalBox {
     in-out property <string> active-tab: "Body";
     in-out property <string> response-body: "Aguardando requisição...";
     in property <string> status: "200 OK";
-    in property <string> time: "515 ms";
-    in property <string> size: "941 B";
+    in property <string> time: "0 ms";
+    in property <string> size: "0 B";
     
     spacing: 0px;
     padding: 10px;
@@ -33,10 +33,13 @@ export component ResponsePanel inherits VerticalBox {
     
     Rectangle {
         height: 1px;
-        background: #e0e0e0;
+        background: #888888;
+        opacity: 0.3;
     }
+    Rectangle { height: 10px; }
 
-    if active-tab == "Body" : VerticalBox {
+    VerticalBox {
+        visible: active-tab == "Body";
         TextEdit {
             text <=> root.response-body;
             read-only: true;
