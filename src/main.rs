@@ -1,4 +1,6 @@
-use reqwest::{Client, Method};
+slint::include_modules!();
+
+use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue}};
 use std::time::Instant;
 
 pub struct RequestResult {
@@ -7,7 +9,12 @@ pub struct RequestResult {
     pub body: String,
 }
 
-pub async fn make_request(method_str: &str, url: &str) -> Result<RequestResult, String> {
+pub async fn make_request(
+    method_str: &str, 
+    url: &str,
+    headers_vec: Vec<(String, String)>,
+    request_body: &str,
+) -> Result<RequestResult, String> {
     let client = Client::new();
     
     let method = match method_str.to_uppercase().as_str() {
@@ -19,10 +26,24 @@ pub async fn make_request(method_str: &str, url: &str) -> Result<RequestResult, 
         _ => return Err(format!("Método HTTP inválido: {}", method_str)),
     };
 
+    let mut header_map = HeaderMap::new();
+    for (key, value) in headers_vec {
+        if !key.trim().is_empty() {
+            if let (Ok(k), Ok(v)) = (HeaderName::from_bytes(key.as_bytes()), HeaderValue::from_str(&value)) {
+                header_map.insert(k, v);
+            }
+        }
+    }
+
     let start_time = Instant::now();
     
-    let response = client
-        .request(method, url)
+    let mut request_builder = client.request(method, url).headers(header_map);
+    
+    if !request_body.trim().is_empty() {
+        request_builder = request_builder.body(request_body.to_string());
+    }
+
+    let response = request_builder
         .send()
         .await
         .map_err(|e| format!("Erro na requisição: {}", e))?;
@@ -42,6 +63,8 @@ pub async fn make_request(method_str: &str, url: &str) -> Result<RequestResult, 
     })
 }
 
-fn main() {
-    println!("Requestman - Motor de rede preparado!");
+fn main() -> Result<(), slint::PlatformError> {
+    let ui = MainWindow::new()?;
+    println!("Requestman - Iniciando interface (Apenas visual, sem lógica ainda)!");
+    ui.run()
 }

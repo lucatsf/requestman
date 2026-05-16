@@ -1,0 +1,28 @@
+export component CustomTab inherits Rectangle {
+    in property <string> text;
+    in property <bool> active;
+    callback clicked();
+    
+    width: label.preferred-width + 20px;
+    height: 35px;
+    
+    label := Text {
+        text: root.text;
+        color: root.active ? #f26b3a : #888;
+        font-weight: root.active ? 600 : 400;
+        vertical-alignment: center;
+        horizontal-alignment: center;
+    }
+    
+    Rectangle {
+        y: parent.height - 2px;
+        height: 2px;
+        width: parent.width;
+        background: root.active ? #f26b3a : transparent;
+    }
+    
+    TouchArea {
+        clicked => { root.clicked() }
+        mouse-cursor: pointer;
+    }
+}

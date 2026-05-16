@@ -1,0 +1,31 @@
+import { Button, ComboBox, LineEdit, HorizontalBox } from "std-widgets.slint";
+
+export component UrlBar inherits HorizontalBox {
+    spacing: 10px;
+    padding: 10px;
+    
+    in property <[string]> methods: ["GET", "POST", "PUT", "DELETE", "PATCH"];
+    in-out property <string> current-method: "GET";
+    in-out property <string> url: "";
+
+    callback on-send();
+
+    ComboBox {
+        model: methods;
+        current-value <=> root.current-method;
+        width: 120px;
+    }
+
+    LineEdit {
+        placeholder-text: "https://api.exemplo.com";
+        text <=> root.url;
+        horizontal-stretch: 1;
+        accepted => { root.on-send(); }
+    }
+
+    Button {
+        text: "Send";
+        primary: true;
+        clicked => { root.on-send(); }
+    }
+}

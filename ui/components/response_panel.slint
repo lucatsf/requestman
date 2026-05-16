@@ -1,0 +1,49 @@
+import { TextEdit, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { CustomTab } from "shared.slint";
+
+export component ResponsePanel inherits VerticalBox {
+    in-out property <string> active-tab: "Body";
+    in-out property <string> response-body: "Aguardando requisição...";
+    in property <string> status: "200 OK";
+    in property <string> time: "515 ms";
+    in property <string> size: "941 B";
+    
+    spacing: 0px;
+    padding: 10px;
+
+    HorizontalBox {
+        alignment: space-between;
+        
+        HorizontalBox {
+            alignment: start;
+            spacing: 10px;
+            CustomTab { text: "Body"; active: active-tab == "Body"; clicked => { active-tab = "Body" } }
+            CustomTab { text: "Cookies"; active: active-tab == "Cookies"; clicked => { active-tab = "Cookies" } }
+            CustomTab { text: "Headers"; active: active-tab == "Headers"; clicked => { active-tab = "Headers" } }
+        }
+        
+        HorizontalBox {
+            alignment: end;
+            spacing: 15px;
+            Text { text: root.status; color: #2e8b57; vertical-alignment: center; }
+            Text { text: root.time; color: #2e8b57; vertical-alignment: center; }
+            Text { text: root.size; color: #2e8b57; vertical-alignment: center; }
+        }
+    }
+    
+    Rectangle {
+        height: 1px;
+        background: #e0e0e0;
+    }
+
+    if active-tab == "Body" : VerticalBox {
+        TextEdit {
+            text <=> root.response-body;
+            read-only: true;
+        }
+    }
+    
+    if active-tab != "Body" : VerticalBox {
+        Text { text: "Visualização não implementada."; color: #888; }
+    }
+}

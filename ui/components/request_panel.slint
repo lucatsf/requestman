@@ -1,0 +1,49 @@
+import { TextEdit, LineEdit, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { CustomTab } from "shared.slint";
+
+export component RequestPanel inherits VerticalBox {
+    in-out property <string> active-tab: "Params";
+    in-out property <string> body-text: "";
+    
+    spacing: 0px;
+    padding: 10px;
+
+    HorizontalBox {
+        alignment: start;
+        spacing: 10px;
+        CustomTab { text: "Params"; active: active-tab == "Params"; clicked => { active-tab = "Params" } }
+        CustomTab { text: "Auth"; active: active-tab == "Auth"; clicked => { active-tab = "Auth" } }
+        CustomTab { text: "Headers"; active: active-tab == "Headers"; clicked => { active-tab = "Headers" } }
+        CustomTab { text: "Body"; active: active-tab == "Body"; clicked => { active-tab = "Body" } }
+    }
+    
+    Rectangle {
+        height: 1px;
+        background: #e0e0e0;
+    }
+
+    if active-tab == "Params" : VerticalBox {
+        HorizontalBox {
+            LineEdit { placeholder-text: "Key"; }
+            LineEdit { placeholder-text: "Value"; }
+            LineEdit { placeholder-text: "Description"; }
+        }
+    }
+    
+    if active-tab == "Headers" : VerticalBox {
+        HorizontalBox {
+            LineEdit { placeholder-text: "Key (ex: Content-Type)"; }
+            LineEdit { placeholder-text: "Value (ex: application/json)"; }
+        }
+    }
+    
+    if active-tab == "Body" : VerticalBox {
+        TextEdit {
+            text <=> root.body-text;
+        }
+    }
+
+    if active-tab == "Auth" : VerticalBox {
+        Text { text: "Autenticação em breve"; color: #888; }
+    }
+}
