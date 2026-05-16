@@ -1,6 +1,12 @@
 slint::include_modules!();
 
+mod collection;
+
+use collection::{Collection, SavedRequest, HeaderPair};
 use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue}};
+use slint::{ModelRc, VecModel};
+use std::rc::Rc;
+use std::cell::RefCell;
 use std::time::Instant;
 
 pub struct RequestResult {
@@ -68,14 +74,29 @@ pub async fn make_request(
     })
 }
 
-#[tokio::main]
-async fn main() -> Result<(), slint::PlatformError> {
+fn main() -> Result<(), slint::PlatformError> {
     let ui = MainWindow::new()?;
     
-    let ui_handle = ui.as_weak();
+    let collection_path = "requestman_collection.json";
+    let current_collection = collection::load_collection(collection_path);
+    let shared_collection = Rc::new(RefCell::new(current_collection));
+    
+    let update_ui_collection = |ui: &MainWindow, col: &Collection| {
+        let items: Vec<CollectionItem> = col.requests.iter().map(|req| {
+            CollectionItem {
+                name: req.name.clone().into(),
+                method: req.method.clone().into(),
+            }
+        }).collect();
+        let model = Rc::new(VecModel::from(items));
+        ui.set_collection_items(ModelRc::from(model));
+    };
+    
+    update_ui_collection(&ui, &shared_collection.borrow());
 
+    let ui_handle_send = ui.as_weak();
     ui.on_send_request(move || {
-        let ui = ui_handle.unwrap();
+        let ui = ui_handle_send.unwrap();
         
         let url = ui.get_url().to_string();
         let method = ui.get_method().to_string();
@@ -98,25 +119,91 @@ async fn main() -> Result<(), slint::PlatformError> {
 
         let ui_handle_async = ui.as_weak();
 
-        tokio::spawn(async move {
-            let result = make_request(&method, &url, headers, &body).await;
+        // Para evitar travar a UI, disparamos a requisição em uma thread separada
+        std::thread::spawn(move || {
+            // Criamos um runtime isolado apenas para a requisição
+            if let Ok(rt) = tokio::runtime::Runtime::new() {
+                rt.block_on(async move {
+                    let result = make_request(&method, &url, headers, &body).await;
 
-            let _ = slint::invoke_from_event_loop(move || {
-                let ui = ui_handle_async.unwrap();
-                match result {
-                    Ok(res) => {
-                        ui.set_response_body(res.body.into());
-                        ui.set_response_status(format!("{} Status", res.status).into());
-                        ui.set_response_time(format!("{} ms", res.time_ms).into());
-                        ui.set_response_size(format!("{} B", res.size_bytes).into());
-                    }
-                    Err(e) => {
-                        ui.set_response_body(e.into());
-                        ui.set_response_status("Erro".into());
-                    }
-                }
-            });
+                    let _ = slint::invoke_from_event_loop(move || {
+                        let ui = ui_handle_async.unwrap();
+                        match result {
+                            Ok(res) => {
+                                ui.set_response_body(res.body.into());
+                                ui.set_response_status(format!("{} Status", res.status).into());
+                                ui.set_response_time(format!("{} ms", res.time_ms).into());
+                                ui.set_response_size(format!("{} B", res.size_bytes).into());
+                            }
+                            Err(e) => {
+                                ui.set_response_body(e.into());
+                                ui.set_response_status("Erro".into());
+                            }
+                        }
+                    });
+                });
+            }
         });
+    });
+
+    let ui_save = ui.as_weak();
+    let col_save = shared_collection.clone();
+    ui.on_save_request(move |name| {
+        let ui = ui_save.unwrap();
+        let mut req = SavedRequest {
+            name: name.to_string(),
+            url: ui.get_url().to_string(),
+            method: ui.get_method().to_string(),
+            body: ui.get_request_body().to_string(),
+            headers: vec![],
+        };
+
+        let h1_k = ui.get_header1_key().to_string();
+        let h1_v = ui.get_header1_val().to_string();
+        let h2_k = ui.get_header2_key().to_string();
+        let h2_v = ui.get_header2_val().to_string();
+
+        if !h1_k.is_empty() { req.headers.push(HeaderPair { key: h1_k, value: h1_v }); }
+        if !h2_k.is_empty() { req.headers.push(HeaderPair { key: h2_k, value: h2_v }); }
+
+        let mut col = col_save.borrow_mut();
+        if let Some(existing) = col.requests.iter_mut().find(|r| r.name == req.name) {
+            *existing = req;
+        } else {
+            col.requests.push(req);
+        }
+        
+        let _ = collection::save_collection("requestman_collection.json", &col);
+        
+        let items: Vec<CollectionItem> = col.requests.iter().map(|r| {
+            CollectionItem { name: r.name.clone().into(), method: r.method.clone().into() }
+        }).collect();
+        ui.set_collection_items(ModelRc::from(Rc::new(VecModel::from(items))));
+    });
+
+    let ui_load = ui.as_weak();
+    let col_load = shared_collection.clone();
+    ui.on_load_request(move |index| {
+        let ui = ui_load.unwrap();
+        let col = col_load.borrow();
+        if let Some(req) = col.requests.get(index as usize) {
+            ui.set_url(req.url.clone().into());
+            ui.set_method(req.method.clone().into());
+            ui.set_request_body(req.body.clone().into());
+            
+            // reset headers
+            ui.set_header1_key("".into()); ui.set_header1_val("".into());
+            ui.set_header2_key("".into()); ui.set_header2_val("".into());
+
+            if let Some(h) = req.headers.get(0) {
+                ui.set_header1_key(h.key.clone().into());
+                ui.set_header1_val(h.value.clone().into());
+            }
+            if let Some(h) = req.headers.get(1) {
+                ui.set_header2_key(h.key.clone().into());
+                ui.set_header2_val(h.value.clone().into());
+            }
+        }
     });
 
     println!("Requestman - Iniciando interface conectada!");

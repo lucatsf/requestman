@@ -1,0 +1,85 @@
+import { VerticalBox, ScrollView } from "std-widgets.slint";
+
+export struct CollectionItem {
+    name: string,
+    method: string,
+}
+
+component SidebarItem inherits Rectangle {
+    in property <string> name;
+    in property <string> method;
+    callback clicked();
+
+    height: 40px;
+    
+    HorizontalLayout {
+        padding: 10px;
+        spacing: 10px;
+        Text {
+            text: root.method;
+            color: #f26b3a;
+            font-weight: 700;
+            width: 50px;
+        }
+        Text {
+            text: root.name;
+            overflow: elide;
+        }
+    }
+
+    touch := TouchArea {
+        clicked => { root.clicked() }
+        mouse-cursor: pointer;
+    }
+
+    // Efeito de hover suave
+    Rectangle {
+        width: parent.width;
+        height: parent.height;
+        background: #888888;
+        opacity: touch.has-hover ? 0.1 : 0.0;
+    }
+}
+
+export component Sidebar inherits Rectangle {
+    width: 220px;
+    
+    in property <[CollectionItem]> items;
+    callback item-clicked(int);
+
+    // Borda direita
+    Rectangle {
+        x: parent.width - 1px;
+        width: 1px;
+        height: parent.height;
+        background: #888888;
+        opacity: 0.3;
+    }
+
+    VerticalBox {
+        padding: 0px;
+        spacing: 0px;
+        
+        HorizontalLayout {
+            padding: 15px;
+            Text {
+                text: "Collections";
+                font-weight: 700;
+                font-size: 14px;
+            }
+        }
+        
+        Rectangle { height: 1px; background: #888888; opacity: 0.3; }
+
+        ScrollView {
+            VerticalLayout {
+                alignment: start;
+                for item[i] in items : SidebarItem {
+                    name: item.name;
+                    method: item.method;
+                    clicked => { root.item-clicked(i) }
+                }
+            }
+        }
+    }
+}

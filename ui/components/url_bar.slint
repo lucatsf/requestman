@@ -9,6 +9,7 @@ export component UrlBar inherits HorizontalBox {
     in-out property <string> url: "";
 
     callback on-send();
+    callback on-save();
 
     ComboBox {
         model: methods;
@@ -21,6 +22,11 @@ export component UrlBar inherits HorizontalBox {
         text <=> root.url;
         horizontal-stretch: 1;
         accepted => { root.on-send(); }
+    }
+
+    Button {
+        text: "Save";
+        clicked => { root.on-save(); }
     }
 
     Button {

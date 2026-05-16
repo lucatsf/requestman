@@ -1,7 +1,8 @@
-import { VerticalBox } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox } from "std-widgets.slint";
 import { UrlBar } from "components/url_bar.slint";
 import { RequestPanel } from "components/request_panel.slint";
 import { ResponsePanel } from "components/response_panel.slint";
+import { Sidebar, CollectionItem } from "components/sidebar.slint";
 
 export component MainWindow inherits Window {
     title: "Requestman";
@@ -21,28 +22,45 @@ export component MainWindow inherits Window {
     in-out property <string> response-time <=> response-panel.time;
     in-out property <string> response-size <=> response-panel.size;
 
-    callback send-request();
+    in property <[CollectionItem]> collection-items;
 
-    VerticalBox {
+    callback send-request();
+    callback save-request(string);
+    callback load-request(int);
+
+    HorizontalBox {
         spacing: 0px;
         padding: 0px;
 
-        url-bar := UrlBar {
-            on-send => { root.send-request() }
+        Sidebar {
+            items: root.collection-items;
+            item-clicked(idx) => { root.load-request(idx) }
         }
 
-        request-panel := RequestPanel {
-            vertical-stretch: 1;
-        }
+        VerticalBox {
+            spacing: 0px;
+            padding: 0px;
 
-        Rectangle {
-            height: 2px;
-            background: #888888;
-            opacity: 0.3;
-        }
+            url-bar := UrlBar {
+                on-send => { root.send-request() }
+                on-save => { 
+                    root.save-request(root.url == "" ? "Nova Requisição" : root.url) 
+                }
+            }
 
-        response-panel := ResponsePanel {
-            vertical-stretch: 1;
+            request-panel := RequestPanel {
+                vertical-stretch: 1;
+            }
+
+            Rectangle {
+                height: 2px;
+                background: #888888;
+                opacity: 0.3;
+            }
+
+            response-panel := ResponsePanel {
+                vertical-stretch: 1;
+            }
         }
     }
 }
